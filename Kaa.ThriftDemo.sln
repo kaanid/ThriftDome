@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kaa.ThriftDemo.Client", "Client\Kaa.ThriftDemo.Client.csproj", "{B4C53BE1-564A-4F8D-9A76-24FEDD99CE64}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kaa.ThriftDemo.ThriftManage", "ThriftManage\Kaa.ThriftDemo.ThriftManage.csproj", "{3E6D655B-6AEE-480E-B8E1-336718BC2E49}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kaa.ThriftDemo.Service", "Service\Kaa.ThriftDemo.Service.csproj", "{61AC275D-683B-410A-97D1-F9BE5661C6BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaa.ThriftDemo.Service.Thrift", "Kaa.ThriftDemo.Service.Thrift\Kaa.ThriftDemo.Service.Thrift.csproj", "{03FA6E60-DA31-4595-909D-16DF51F4372A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thrift", "utils\Thrift\Thrift.csproj", "{D7AF6BA4-7C31-4A62-AC33-949F93058F33}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B4C53BE1-564A-4F8D-9A76-24FEDD99CE64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C53BE1-564A-4F8D-9A76-24FEDD99CE64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4C53BE1-564A-4F8D-9A76-24FEDD99CE64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4C53BE1-564A-4F8D-9A76-24FEDD99CE64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3E6D655B-6AEE-480E-B8E1-336718BC2E49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E6D655B-6AEE-480E-B8E1-336718BC2E49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E6D655B-6AEE-480E-B8E1-336718BC2E49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E6D655B-6AEE-480E-B8E1-336718BC2E49}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61AC275D-683B-410A-97D1-F9BE5661C6BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61AC275D-683B-410A-97D1-F9BE5661C6BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61AC275D-683B-410A-97D1-F9BE5661C6BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61AC275D-683B-410A-97D1-F9BE5661C6BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03FA6E60-DA31-4595-909D-16DF51F4372A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03FA6E60-DA31-4595-909D-16DF51F4372A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03FA6E60-DA31-4595-909D-16DF51F4372A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03FA6E60-DA31-4595-909D-16DF51F4372A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E05C9EBB-B8CC-4B9A-8CE6-04AF96B34E09}
+	EndGlobalSection
+EndGlobal

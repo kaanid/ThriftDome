@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Kaa.ThriftDemo.Service.Thrift;
+using Microsoft.Extensions.Logging;
 using shared.d;
 using System;
 using System.Diagnostics;
@@ -10,7 +11,6 @@ using Thrift;
 using Thrift.Protocols;
 using Thrift.Transports;
 using Thrift.Transports.Client;
-using tutorial.c;
 
 namespace Client
 {
@@ -165,24 +165,6 @@ namespace Client
             Logger.LogInformation($"{client.ClientId} AddAsync(1,1) do:{max} ms:{sw.ElapsedMilliseconds}");
         }
 
-        private static async Task ExecuteCalculatorClientTestOpenConn(CancellationToken cancellationToken, Calculator.Client client)
-        {
-            
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int max = 10000;
-            foreach (var i in Enumerable.Range(0, max))
-            {
-                await client.OpenTransportAsync(cancellationToken);
-                var sum = await client.addAsync(1, 1, cancellationToken);
-                
-                //Logger.LogInformation($"{client.ClientId} AddAsync(1,1)={sum}");
-            }
-
-            sw.Stop();
-            Logger.LogInformation($"{client.ClientId} AddAsync(1,1) do:{max} ms:{sw.ElapsedMilliseconds}");
-        }
-
         private static async Task ExecuteCalculatorClientOperations(CancellationToken cancellationToken,Calculator.Client client)
         {
             await client.OpenTransportAsync(cancellationToken);
@@ -246,8 +228,8 @@ namespace Client
         {
             var transport = args.FirstOrDefault(x => x.StartsWith("-tr"))?.Split(':')?[1];
 
-            var ipAddress = new IPAddress(new byte[] { 10, 0, 70, 88 });
-            //var ipAddress = IPAddress.Loopback;
+            //var ipAddress = new IPAddress(new byte[] { 10, 0, 70, 88 });
+            var ipAddress = IPAddress.Loopback;
 
             Transport selectedTransport;
             if(Enum.TryParse(transport, out selectedTransport))
