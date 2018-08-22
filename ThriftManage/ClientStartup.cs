@@ -10,13 +10,14 @@ using Thrift;
 using Thrift.Protocols;
 using Thrift.Transports;
 using Thrift.Transports.Client;
+using Kaa.ThriftDemo.ThriftManage;
 
-namespace ThriftManage
+namespace Kaa.ThriftDemo.ThriftManage
 {
     public class ClientStartup
     {
         private static ConcurrentDictionary<Type, object> concurrentDict = new ConcurrentDictionary<Type, object>();
-        public static async Task<T> GetByCache<T>(string jsonPath,CancellationToken cancellationToken, bool isOpen = false) where T: TBaseClient
+        public static async Task<T> GetByCache<T>(ThriftServiceClientConfig config, CancellationToken cancellationToken, bool isOpen = false) where T: TBaseClient
         {
             var type = typeof(T);
             bool flag=concurrentDict.TryGetValue(type, out object obj);
@@ -27,14 +28,46 @@ namespace ThriftManage
 
             Console.WriteLine($"GetByCache type:{type}");
 
-            var newT = await Get<T>(jsonPath, cancellationToken, isOpen);
+            var newT = await Get<T>(config, cancellationToken, isOpen);
             concurrentDict.TryAdd(type,newT);
             return newT;
         }
 
-        public static async Task<T> Get<T>(string jsonPath,CancellationToken cancellationToken,bool isOpen=false) where T : TBaseClient
+        private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftServiceClientConfig config)
         {
-            var ipEndPoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 9090);
+            Console.WriteLine("GetIPEndPointFromConsul read...");
+            var ip = new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
+            return await Task.FromResult(ip);
+        }
+
+        private static IPEndPoint GetIPEndPointFromConfig(ThriftServiceClientConfig config)
+        {
+            if(config.IP==null)
+            {
+                throw new ArgumentNullException(nameof(config.IP));
+            }
+
+            return new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
+        }
+
+        public static async Task<T> Get<T>(ThriftServiceClientConfig config, CancellationToken cancellationToken,bool isOpen=false) where T : TBaseClient
+        {
+            IPEndPoint ipEndPoint = null;
+            //var ipEndPoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 9090);
+
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            if(string.IsNullOrWhiteSpace(config.Consul))
+            {
+                ipEndPoint = GetIPEndPointFromConfig(config);
+            }
+            else
+            {
+                ipEndPoint =await GetIPEndPointFromConsul(config);
+            }
+
+
             var transport = GetTransport(Transport.TcpBuffered, ipEndPoint);
             var tProtocol = GetProtocol(Protocol.Binary, transport);
 
@@ -59,6 +92,12 @@ namespace ThriftManage
                 client = Activator.CreateInstance(typeof(T), new object[] { tProtocol });
                //client = new Calculator.Client(tProtocol);
             }
+            else
+            {
+                var multiplex = new TMultiplexedProtocol(tProtocol, nameof(T).Replace(".Client",""));
+                client = Activator.CreateInstance(typeof(T), new object[] { multiplex });
+            }
+
             return client as T;
         }
 

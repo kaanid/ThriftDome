@@ -14,6 +14,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.IO;
 using System.Net.Security;
 using Kaa.ThriftDemo.Service.Thrift;
+using Kaa.ThriftDemo.ThriftManage;
 
 namespace ConsoleApp33ThriftService
 {
@@ -54,11 +55,12 @@ namespace ConsoleApp33ThriftService
 
             if(selectedTransport==Transport.Http)
             {
-                //new HttpServerSample()
+                new HttpServerSample();
             }
             else
             {
                 await RunSelectedConfigurationAsync(selectedTransport, selectedProtocol, token);
+                await ServerStartup.RunSelectedConfigurationAsync<Calculator>(Kaa.ThriftDemo.ThriftManage.Enums.Transport.Tcp, Kaa.ThriftDemo.ThriftManage.Enums.Protocol.Binary,9090, token);
             }
 
         }

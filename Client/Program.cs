@@ -1,7 +1,10 @@
 ﻿using Kaa.ThriftDemo.Service.Thrift;
+using Kaa.ThriftDemo.ThriftManage;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using shared.d;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -11,20 +14,19 @@ using Thrift;
 using Thrift.Protocols;
 using Thrift.Transports;
 using Thrift.Transports.Client;
-using ThriftManage;
 
 namespace Client
 {
     class Program
     {
         private static readonly ILogger Logger = new LoggerFactory().AddConsole().AddDebug().CreateLogger(nameof(Client));
+        private static IConfiguration _config = null;
+
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-
-            args = args ?? new string[0];
-            args = new string[] { "-pr:Binary", "-tr:TcpBuffered" };
-            Logger.LogInformation($"args:{string.Join(' ',args)}");
+            _config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
 
             if (args.Any(x => x.StartsWith("-help", StringComparison.OrdinalIgnoreCase)))
             {
@@ -55,8 +57,10 @@ namespace Client
             var protocol = Protocol.Binary;
             Logger.LogInformation($"Selected client protocol: {protocol}");
 
+            var clientConfigList = _config.GetSection("ThriftService").Get<List<ThriftServiceClientConfig>>();
+            var clientConfig = clientConfigList.FirstOrDefault(m => m.ServiceName.EndsWith(nameof(Calculator.Client)));
             //var client= ClientStartup.Get<Calculator.Client>("");
-            var client =await ClientStartup.GetByCache<Calculator.Client>("",cancellationToken,true);
+            var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken,true);
             await ExecuteCalculatorClientTest(cancellationToken, client);
 
             //Task.WaitAll(tasks);

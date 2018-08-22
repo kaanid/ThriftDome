@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kaa.ThriftDemo.Service.Thrift\Kaa.ThriftDemo.Service.Thrift.csproj" />
+    <ProjectReference Include="..\ThriftManage\Kaa.ThriftDemo.ThriftManage.csproj" />
     <ProjectReference Include="..\utils\Thrift\Thrift.csproj" />
   </ItemGroup>
 
