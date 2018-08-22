@@ -11,6 +11,7 @@ using Thrift;
 using Thrift.Protocols;
 using Thrift.Transports;
 using Thrift.Transports.Client;
+using ThriftManage;
 
 namespace Client
 {
@@ -36,6 +37,8 @@ namespace Client
             using (var source = new CancellationTokenSource())
             {
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
+                Thread.Sleep(1000);
+                RunAsync(args, source.Token).GetAwaiter().GetResult();
             }
 
             Thread.Sleep(500);
@@ -44,38 +47,19 @@ namespace Client
 
         private static async Task RunAsync(string[] args,CancellationToken cancellationToken)
         {
-            var numClients = GetNumberOfClients(args);
+            var numClients = 1;
 
             Logger.LogInformation($"Selected # of clients: {numClients}");
+            var transport = Transport.TcpBuffered;
+            Logger.LogInformation($"Selected client transport:{transport}");
+            var protocol = Protocol.Binary;
+            Logger.LogInformation($"Selected client protocol: {protocol}");
 
-            var transports = new TClientTransport[numClients];
+            //var client= ClientStartup.Get<Calculator.Client>("");
+            var client =await ClientStartup.GetByCache<Calculator.Client>("",cancellationToken,true);
+            await ExecuteCalculatorClientTest(cancellationToken, client);
 
-            for(var i=0;i<numClients;i++)
-            {
-                var t = GetTransport(args);
-                transports[i] = t;
-            }
-
-            Logger.LogInformation($"Selected client transport:{transports[0]}");
-
-            var protocols = new Tuple<Protocol, TProtocol>[numClients];
-
-            for(var i=0;i<numClients;i++)
-            {
-                var p = GetProtocol(args,transports[i]);
-                protocols[i] = p;
-            }
-
-            Logger.LogInformation($"Selected client protocol: {protocols[0].Item1}");
-
-            var tasks = new Task[numClients];
-            for(int i=0;i<numClients;i++)
-            {
-                var task = RunClientAsync(protocols[i], cancellationToken);
-                tasks[i] = task;
-            }
-
-            Task.WaitAll(tasks);
+            //Task.WaitAll(tasks);
 
             //await Task.FromResult(1);
             await Task.CompletedTask;
@@ -149,9 +133,8 @@ namespace Client
             Logger.LogInformation($"{client.ClientId} SharedService Value: {log.Value}");
         }
 
-        private static async Task ExecuteCalculatorClientTest(CancellationToken cancellationToken, Calculator.Client client)
+        private static async Task ExecuteCalculatorClientTest(CancellationToken cancellationToken, Calculator.IAsync client)
         {
-            await client.OpenTransportAsync(cancellationToken);
             Stopwatch sw = Stopwatch.StartNew();
 
             int max = 100000;
@@ -162,7 +145,7 @@ namespace Client
             }
 
             sw.Stop();
-            Logger.LogInformation($"{client.ClientId} AddAsync(1,1) do:{max} ms:{sw.ElapsedMilliseconds}");
+            Logger.LogInformation($"ExecuteCalculatorClientTest AddAsync(1,1) do:{max} ms:{sw.ElapsedMilliseconds}");
         }
 
         private static async Task ExecuteCalculatorClientOperations(CancellationToken cancellationToken,Calculator.Client client)
