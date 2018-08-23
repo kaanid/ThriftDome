@@ -18,20 +18,38 @@ using System.Security.Cryptography.X509Certificates;
 using System.Linq;
 using System.Net.Security;
 using Thrift.Server;
+using System.Reflection;
 
 namespace Kaa.ThriftDemo.ThriftManage
 {
     public class ServerStartup
     {
+        private static async Task RegisterConsul(ThriftServerConfig config,ILogger log)
+        {
+            if (string.IsNullOrWhiteSpace(config.Consul))
+            {
+                log.LogInformation($"Incompetent registration on the Consul");
+            }
 
-        public static async Task RunSelectedConfigurationAsync<T>(Transport transport, Protocol protocol,int port, CancellationToken cancellationToken) where T:new()
+            await Task.CompletedTask;
+        }
+
+        public static async Task Init<T,T2>(ThriftServerConfig config, CancellationToken cancellationToken) 
+            where T:new() 
+            where T2 : ITAsyncProcessor
         {
             var fabric = new LoggerFactory()
                 .AddConsole(LogLevel.Trace)
                 .AddDebug(LogLevel.Trace);
 
-            ILogger Logger = fabric.CreateLogger(nameof(RunSelectedConfigurationAsync));
+            ILogger Logger = fabric.CreateLogger(nameof(ServerStartup));
+            
+            Transport transport=Transport.TcpBuffered;
+            Protocol protocol = Protocol.Binary;
+            int port = config.Port;
 
+
+            var typeT2 = typeof(T2);
             var handler = new T();
 
             ITAsyncProcessor processor = null;
@@ -40,71 +58,90 @@ namespace Kaa.ThriftDemo.ThriftManage
             switch (transport)
             {
                 case Transport.Tcp:
-                    serverTransport = new TServerSocketTransport(9090);
+                    serverTransport = new TServerSocketTransport(port);
                     break;
                 case Transport.TcpBuffered:
-                    serverTransport = new TServerSocketTransport(9090, 10000, true);
+                    serverTransport = new TServerSocketTransport(port, 10000, true);
                     break;
                 case Transport.NamedPipe:
                     serverTransport = new TNamedPipeServerTransport(".test");
                     break;
                 case Transport.TcpTls:
-                    serverTransport = new TTlsServerSocketTransport(9090, false, GetCertificate(), ClientCertValidator, LocalCertificateSelectionCallback);
+                    serverTransport = new TTlsServerSocketTransport(port, false, GetCertificate(), ClientCertValidator, LocalCertificateSelectionCallback);
                     break;
                 case Transport.Framed:
-                    serverTransport = new TServerFramedTransport(9090);
+                    serverTransport = new TServerFramedTransport(port);
                     break;
+                case Transport.Http:
+                    throw new NotSupportedException(nameof(Transport.Http));
             }
 
             ITProtocolFactory inputProtocolFactory;
             ITProtocolFactory outputProtocolFactory;
 
+            object objProcessor = null;
             switch (protocol)
             {
                 case Protocol.Binary:
                     inputProtocolFactory = new TBinaryProtocol.Factory();
                     outputProtocolFactory = new TBinaryProtocol.Factory();
-                    //var obj= Activator.CreateInstance(typeof("asfd",true),new object[] { handler });
-                    var type= Type.GetType($"{typeof(T).ReflectedType.ToString()}.AsyncProcessor");
-                    var obj = Activator.CreateInstance(type, new object[] { handler });
-                    processor = obj as ITAsyncProcessor;
+
+                    objProcessor = Activator.CreateInstance(typeT2, new object[] { handler });
+                    //var assm = Assembly.Load("Kaa.ThriftDemo.Service.Thrift");
+                    //var typeT2 =assm.GetType("Kaa.ThriftDemo.Service.Thrift.Calculator+AsyncProcessor");
+                    //var type = typeof(T).GetInterfaces()[0];
+                    //var obj=typeT2.GetConstructor(new Type[] { type }).Invoke(new object[] { handler });
+
                     break;
                 case Protocol.Compact:
                     inputProtocolFactory = new TCompactProtocol.Factory();
                     outputProtocolFactory = new TCompactProtocol.Factory();
+
                     //processor = new Calculator.AsyncProcessor(handler);
+                    objProcessor = Activator.CreateInstance(typeT2, new object[] { handler });
                     break;
                 case Protocol.Json:
                     inputProtocolFactory = new TJsonProtocol.Factory();
                     outputProtocolFactory = new TJsonProtocol.Factory();
-                    //processor = new Calculator.AsyncProcessor(handler);
+
+                    objProcessor = Activator.CreateInstance(typeT2, new object[] { handler });
                     break;
                 case Protocol.Multiplexed:
                     inputProtocolFactory = new TBinaryProtocol.Factory();
                     outputProtocolFactory = new TBinaryProtocol.Factory();
 
-                    //var calcProcessor = new Calculator.AsyncProcessor(handler);
+                    objProcessor = Activator.CreateInstance(typeT2, new object[] { handler });
+                    var calcProcessor = objProcessor as ITAsyncProcessor;
 
-                    //var multiplexedProcessor = new TMultiplexedProcessor();
-                    ///multiplexedProcessor.RegisterProcessor(nameof(Calculator), calcProcessor);
+                    var multiplexedProcessor = new TMultiplexedProcessor();
+                    multiplexedProcessor.RegisterProcessor(typeof(T).FullName, calcProcessor);
+
                     //multiplexedProcessor.RegisterProcessor(nameof(SharedService), calcProcessorShared);
 
-                    //processor = multiplexedProcessor;
+                    processor = multiplexedProcessor;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(protocol), protocol, null);
             }
 
+            if (objProcessor == null)
+                throw new ArgumentNullException(nameof(objProcessor), "objProcessor is null");
+
+            processor = objProcessor as ITAsyncProcessor;
+            if(processor==null)
+                throw new ArgumentNullException(nameof(processor), "processor is null");
+
             try
             {
-                Logger.LogInformation(
-                    $"Selected TAsyncServer with {serverTransport} transport, {processor} processor and {inputProtocolFactory} protocol factories");
+                Logger.LogInformation($"Selected TAsyncServer with {serverTransport} transport, {processor} processor and {inputProtocolFactory} protocol factories");
 
                 var server = new AsyncBaseServer(processor, serverTransport, inputProtocolFactory, outputProtocolFactory, fabric);
 
-                Logger.LogInformation("Starting the server ...");
+                Logger.LogInformation($"Starting the server port:{port} transport:{transport} protocol:{protocol} ...");
 
                 await server.ServeAsync(cancellationToken);
+
+                await RegisterConsul(config, Logger);
             }
             catch (Exception ex)
             {

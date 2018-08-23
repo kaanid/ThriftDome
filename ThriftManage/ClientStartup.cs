@@ -17,7 +17,7 @@ namespace Kaa.ThriftDemo.ThriftManage
     public class ClientStartup
     {
         private static ConcurrentDictionary<Type, object> concurrentDict = new ConcurrentDictionary<Type, object>();
-        public static async Task<T> GetByCache<T>(ThriftServiceClientConfig config, CancellationToken cancellationToken, bool isOpen = false) where T: TBaseClient
+        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken, bool isOpen = false) where T: TBaseClient
         {
             var type = typeof(T);
             bool flag=concurrentDict.TryGetValue(type, out object obj);
@@ -26,21 +26,21 @@ namespace Kaa.ThriftDemo.ThriftManage
                 return obj as T;
             }
 
-            Console.WriteLine($"GetByCache type:{type}");
+            //Console.WriteLine($"GetByCache type:{type}");
 
             var newT = await Get<T>(config, cancellationToken, isOpen);
             concurrentDict.TryAdd(type,newT);
             return newT;
         }
 
-        private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftServiceClientConfig config)
+        private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftClientConfig config)
         {
             Console.WriteLine("GetIPEndPointFromConsul read...");
             var ip = new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
             return await Task.FromResult(ip);
         }
 
-        private static IPEndPoint GetIPEndPointFromConfig(ThriftServiceClientConfig config)
+        private static IPEndPoint GetIPEndPointFromConfig(ThriftClientConfig config)
         {
             if(config.IP==null)
             {
@@ -50,7 +50,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             return new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
         }
 
-        public static async Task<T> Get<T>(ThriftServiceClientConfig config, CancellationToken cancellationToken,bool isOpen=false) where T : TBaseClient
+        public static async Task<T> Get<T>(ThriftClientConfig config, CancellationToken cancellationToken,bool isOpen=false) where T : TBaseClient
         {
             IPEndPoint ipEndPoint = null;
             //var ipEndPoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 9090);
@@ -90,7 +90,6 @@ namespace Kaa.ThriftDemo.ThriftManage
                 //Console.WriteLine(typeof(T));
                 //client= typeof(T).GetConstructor(new Type[] {typeof(TProtocol) }).Invoke(new object[] { tProtocol });
                 client = Activator.CreateInstance(typeof(T), new object[] { tProtocol });
-               //client = new Calculator.Client(tProtocol);
             }
             else
             {

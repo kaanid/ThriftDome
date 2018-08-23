@@ -49,17 +49,9 @@ namespace Client
 
         private static async Task RunAsync(string[] args,CancellationToken cancellationToken)
         {
-            var numClients = 1;
-
-            Logger.LogInformation($"Selected # of clients: {numClients}");
-            var transport = Transport.TcpBuffered;
-            Logger.LogInformation($"Selected client transport:{transport}");
-            var protocol = Protocol.Binary;
-            Logger.LogInformation($"Selected client protocol: {protocol}");
-
-            var clientConfigList = _config.GetSection("ThriftService").Get<List<ThriftServiceClientConfig>>();
+            var clientConfigList = _config.GetSection("ThriftService").Get<List<ThriftClientConfig>>();
             var clientConfig = clientConfigList.FirstOrDefault(m => m.ServiceName.EndsWith(nameof(Calculator.Client)));
-            //var client= ClientStartup.Get<Calculator.Client>("");
+
             var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken,true);
             await ExecuteCalculatorClientTest(cancellationToken, client);
 
@@ -68,64 +60,6 @@ namespace Client
             //await Task.FromResult(1);
             await Task.CompletedTask;
 
-        }
-
-        private static async Task RunClientAsync(Tuple<Protocol,TProtocol> protocolTuple,CancellationToken cancellationToken)
-        {
-            try
-            {
-                var protocol = protocolTuple.Item2;
-                var protocolType = protocolTuple.Item1;
-
-                TBaseClient client = null;
-
-                try
-                {
-                    if(protocolType!=Protocol.Multiplexed)
-                    {
-                        client = new Calculator.Client(protocol);
-
-                        //await ExecuteCalculatorClientOperations(cancellationToken, (Calculator.Client)client);
-                        await ExecuteCalculatorClientTest(cancellationToken, (Calculator.Client)client);
-
-                        //Stopwatch sw2 = Stopwatch.StartNew();
-                        //for (int i = 0; i < 10; i++)
-                        //{   
-                        //    await ExecuteCalculatorClientTest(cancellationToken, (Calculator.Client)client);
-                        //}
-                        //sw2.Stop();
-                        //long ms = sw2.ElapsedMilliseconds;
-                        //Logger.LogInformation($"RunClientAsync 10 do:10 ms:{sw2.ElapsedMilliseconds}");
-                    }
-                    else
-                    {
-                        var multiplex = new TMultiplexedProtocol(protocol, nameof(Calculator));
-                        client = new Calculator.Client(multiplex);
-                        await ExecuteCalculatorClientOperations(cancellationToken, (Calculator.Client)client);
-
-                        multiplex = new TMultiplexedProtocol(protocol, nameof(SharedService));
-                        client = new SharedService.Client(multiplex);
-
-                        await ExecuteSharedServiceClientOperations(cancellationToken, (SharedService.Client)client);
-                        //await ExecuteCalculatorClientOperations(cancellationToken, (Calculator.Client)client);
-
-
-                    }
-                }
-                catch(Exception ex)
-                {
-                    Logger.LogError(ex,$"{client?.ClientId}"+ex);
-                }
-                finally
-                {
-                    protocol.Transport.Close();
-                    Logger.LogInformation($"finally");
-                }
-            }
-            catch(TApplicationException x)
-            {
-                Logger.LogError(x, x.ToString());
-            }
         }
 
         private static async Task ExecuteSharedServiceClientOperations(CancellationToken cancellationToken,SharedService.Client client)
@@ -189,75 +123,6 @@ namespace Client
             await client.zipAsync(cancellationToken);
         }
 
-        private static Tuple<Protocol,TProtocol> GetProtocol(string[] args, TClientTransport transport)
-        {
-            var protocol = args.FirstOrDefault(x => x.StartsWith("-pr"))?.Split(':')?[1];
-
-            Protocol selectedProtocol;
-            if(Enum.TryParse(protocol,true,out selectedProtocol))
-            {
-                switch(selectedProtocol)
-                {
-                    case Protocol.Binary:
-                        return new Tuple<Protocol, TProtocol>(selectedProtocol, new TBinaryProtocol(transport));
-                    case Protocol.Compact:
-                        return new Tuple<Protocol, TProtocol>(selectedProtocol, new TCompactProtocol(transport));
-                    case Protocol.Json:
-                        return new Tuple<Protocol, TProtocol>(selectedProtocol, new TJsonProtocol(transport));
-                    case Protocol.Multiplexed:
-                        return new Tuple<Protocol, TProtocol>(selectedProtocol, new TBinaryProtocol(transport));
-                }
-            }
-
-            return new Tuple<Protocol, TProtocol>(selectedProtocol, new TBinaryProtocol(transport));
-        }
-        private static TClientTransport GetTransport(string[] args)
-        {
-            var transport = args.FirstOrDefault(x => x.StartsWith("-tr"))?.Split(':')?[1];
-
-            //var ipAddress = new IPAddress(new byte[] { 10, 0, 70, 88 });
-            var ipAddress = IPAddress.Loopback;
-
-            Transport selectedTransport;
-            if(Enum.TryParse(transport, out selectedTransport))
-            {
-                
-                
-                switch (selectedTransport)
-                {
-                    case Transport.Tcp:
-                        return new TSocketClientTransport(ipAddress, 9090);
-                    case Transport.NamedPipe:
-                        return new TNamedPipeClientTransport(".test");
-                    case Transport.Http:
-                        return new THttpClientTransport(new Uri("http://localhost:9090"), null);
-                    case Transport.TcpBuffered:
-                        return new TBufferedClientTransport(new TSocketClientTransport(ipAddress, 9090));
-                    case Transport.Framed:
-                        return new TFramedClientTransport(new TSocketClientTransport(ipAddress, 9090));
-                }
-            }
-
-            return new TSocketClientTransport(ipAddress, 9090);
-        }
-
-        private static int GetNumberOfClients(string[] args)
-        {
-            var numClients = args.FirstOrDefault(x => x.StartsWith("-mc"))?.Split(':')?[1];
-
-            Logger.LogInformation($"Selected # of clients:{numClients}");
-
-            int c = 0;
-
-            if(int.TryParse(numClients,out c)&&(0<c)&&(c<=100))
-            {
-                return c;
-            }
-
-            return 1;
-
-        }
-
         private static void DisplayHelp()
         {
             Logger.LogInformation(@"
@@ -284,24 +149,6 @@ namespace Client
                 Sample:
                     Client.exe -tr:tcp -p:binary
                 ");
-        }
-
-        private enum Transport
-        {
-            Tcp,
-            NamedPipe,
-            Http,
-            TcpBuffered,
-            Framed,
-            TcpTls
-        }
-
-        private enum Protocol
-        {
-            Binary,
-            Compact,
-            Json,
-            Multiplexed
         }
     }
 }

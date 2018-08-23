@@ -15,20 +15,24 @@ using System.IO;
 using System.Net.Security;
 using Kaa.ThriftDemo.Service.Thrift;
 using Kaa.ThriftDemo.ThriftManage;
+using Microsoft.Extensions.Configuration;
 
 namespace ConsoleApp33ThriftService
 {
     class Program
     {
         private static readonly ILogger Logger = new LoggerFactory().AddConsole(LogLevel.Trace).CreateLogger(nameof(ConsoleApp33ThriftService));
+        private static IConfiguration _config = null;
+
         static void Main(string[] args)
         {
+            _config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json")
+                .Build();
+
             Console.WriteLine("Hello World!");
 
             args = args ?? new string[0];
-
-            args = new string[] { "-pr:Binary", "-tr:TcpBuffered" };
-
             if (args.Any(x => x.StartsWith("-help", StringComparison.OrdinalIgnoreCase)))
             {
                 DisplayHelp();
@@ -59,8 +63,10 @@ namespace ConsoleApp33ThriftService
             }
             else
             {
-                await RunSelectedConfigurationAsync(selectedTransport, selectedProtocol, token);
-                await ServerStartup.RunSelectedConfigurationAsync<Calculator>(Kaa.ThriftDemo.ThriftManage.Enums.Transport.Tcp, Kaa.ThriftDemo.ThriftManage.Enums.Protocol.Binary,9090, token);
+                var config = _config.GetSection("ThriftService").Get<ThriftServerConfig>();
+
+                //await RunSelectedConfigurationAsync(selectedTransport, selectedProtocol, token);
+                await ServerStartup.Init<ThriftService, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(config, token);
             }
 
         }
