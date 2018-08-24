@@ -25,7 +25,8 @@ namespace Kaa.TriftDemo.FramworkClient
             try
             {
                 TTransport transport = new TSocket("localhost", 9090, 100000);
-                TProtocol protocol = new TBinaryProtocol(transport);
+                TBufferedTransport transport2 = new TBufferedTransport(transport, 2048);
+                TProtocol protocol = new TBinaryProtocol(transport2);
 
                 Calculator.Client client = new Calculator.Client(protocol);
 
@@ -33,14 +34,15 @@ namespace Kaa.TriftDemo.FramworkClient
 
                 Console.WriteLine($"Starting client... host:localhost port:9090");
 
+                int testCount = 100000;
                 Stopwatch sw = Stopwatch.StartNew();
-                foreach (var m in Enumerable.Range(0, 100000))
+                foreach (var m in Enumerable.Range(0, testCount))
                 {
                     int sum = client.add(1, 1);
                     //Console.WriteLine("1+1={0}", sum);
                 }
                 sw.Stop();
-                Console.WriteLine($"client.add(1, 1) do:100000 ms:{sw.ElapsedMilliseconds}");
+                Console.WriteLine($"Execute client.add(1, 1) do:{testCount} ms:{sw.ElapsedMilliseconds}");
 
                 //Work work = new Work();
                 //work.Op = Operation.DIVIDE;
@@ -62,6 +64,8 @@ namespace Kaa.TriftDemo.FramworkClient
             {
                 Console.WriteLine(x.StackTrace);
             }
+
+            await Task.FromResult(1);
         }
     }
 }
