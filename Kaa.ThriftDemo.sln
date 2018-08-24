@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaa.ThriftDemo.Service.Thri
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Thrift", "utils\Thrift\Thrift.csproj", "{D7AF6BA4-7C31-4A62-AC33-949F93058F33}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kaa.TriftDemo.FramworkClient", "Kaa.TriftDemo.FramworkClient\Kaa.TriftDemo.FramworkClient.csproj", "{557B6D71-05CB-42B8-932A-E86CD583A2AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7AF6BA4-7C31-4A62-AC33-949F93058F33}.Release|Any CPU.Build.0 = Release|Any CPU
+		{557B6D71-05CB-42B8-932A-E86CD583A2AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{557B6D71-05CB-42B8-932A-E86CD583A2AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{557B6D71-05CB-42B8-932A-E86CD583A2AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{557B6D71-05CB-42B8-932A-E86CD583A2AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

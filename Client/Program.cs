@@ -39,7 +39,8 @@ namespace Client
             using (var source = new CancellationTokenSource())
             {
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);
+                //source.Cancel();
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
             }
 
