@@ -25,10 +25,14 @@ thrift -r --gen netcore tutorial.thrift
 
 thrift -r --gen csharp:async tutorial.thrift  
 
-### Thrift Transport
+### Thrift Transport override
+
+#### class
 
 1. TStreamTransport
 2. TBufferedTransport
+
+####  override
 
 public override IAsyncResult BeginFlush()
 public override IAsyncResult EndFlush()
