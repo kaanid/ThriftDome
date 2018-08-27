@@ -26,6 +26,7 @@ namespace ConsoleApp33ThriftService
 
         static void Main(string[] args)
         {
+            
             _config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
                 .Build();
@@ -66,6 +67,7 @@ namespace ConsoleApp33ThriftService
                 var config = _config.GetSection("ThriftService").Get<ThriftServerConfig>();
 
                 //await RunSelectedConfigurationAsync(selectedTransport, selectedProtocol, token);
+
                 await ServerStartup.Init<ThriftService, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(config, token);
             }
 

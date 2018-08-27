@@ -4,16 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{557B6D71-05CB-42B8-932A-E86CD583A2AF}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <RootNamespace>Kaa.TriftDemo.FramworkClient</RootNamespace>
-    <AssemblyName>Kaa.TriftDemo.FramworkClient</AssemblyName>
+    <ProjectGuid>{8AEB681F-1176-4BE0-8676-614DB9062C43}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Kaa.ThriftDemo.Framework.Thrift</RootNamespace>
+    <AssemblyName>Kaa.ThriftDemo.Framework.Thrift</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -45,19 +43,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Calculator.cs" />
+    <Compile Include="InvalidOperation.cs" />
+    <Compile Include="Operation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-    <None Include="packages.config" />
-    <None Include="tutorial.thrift" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Kaa.ThriftDemo.Framework.Thrift\Kaa.ThriftDemo.Framework.Thrift.csproj">
-      <Project>{8aeb681f-1176-4be0-8676-614db9062c43}</Project>
-      <Name>Kaa.ThriftDemo.Framework.Thrift</Name>
-    </ProjectReference>
+    <Compile Include="tutorial.Constants.cs" />
+    <Compile Include="Work.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

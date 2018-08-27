@@ -5,11 +5,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.0.1</Version>
   </PropertyGroup>
-
   <ItemGroup>
-    <Reference Include="Thrift">
-      <HintPath>..\publicbin\Thrift.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\utils\Thrift\Thrift.csproj" />
   </ItemGroup>
-  
 </Project>

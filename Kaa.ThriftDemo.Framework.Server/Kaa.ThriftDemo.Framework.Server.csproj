@@ -4,10 +4,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{557B6D71-05CB-42B8-932A-E86CD583A2AF}</ProjectGuid>
+    <ProjectGuid>{C83C3E8A-E6D8-4A94-9FD3-A1B51C7A2889}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Kaa.TriftDemo.FramworkClient</RootNamespace>
-    <AssemblyName>Kaa.TriftDemo.FramworkClient</AssemblyName>
+    <RootNamespace>Kaa.ThriftDemo.Framework.Server</RootNamespace>
+    <AssemblyName>Kaa.ThriftDemo.Framework.Server</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -47,11 +47,10 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ThriftService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="packages.config" />
-    <None Include="tutorial.thrift" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Kaa.ThriftDemo.Framework.Thrift\Kaa.ThriftDemo.Framework.Thrift.csproj">
