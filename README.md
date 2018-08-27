@@ -34,5 +34,5 @@ thrift -r --gen csharp:async tutorial.thrift
 
 ####  override
 
-public override IAsyncResult BeginFlush()
-public override IAsyncResult EndFlush()
+- public override IAsyncResult BeginFlush()
+- public override IAsyncResult EndFlush()
