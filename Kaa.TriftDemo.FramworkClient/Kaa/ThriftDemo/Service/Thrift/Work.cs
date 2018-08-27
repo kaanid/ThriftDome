@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
 using System.Runtime.Serialization;
@@ -33,11 +34,8 @@ namespace Kaa.ThriftDemo.Service.Thrift
   public partial class Work : TBase
   {
     private int _num1;
-    private int _num2;
-    private Operation _op;
-    private string _comment;
 
-    public int Num1
+    public int? Num1
     {
       get
       {
@@ -45,53 +43,20 @@ namespace Kaa.ThriftDemo.Service.Thrift
       }
       set
       {
-        __isset.num1 = true;
-        this._num1 = value;
+        __isset.num1 = value.HasValue;
+        if (value.HasValue) this._num1 = value.Value;
       }
     }
 
-    public int Num2
-    {
-      get
-      {
-        return _num2;
-      }
-      set
-      {
-        __isset.num2 = true;
-        this._num2 = value;
-      }
-    }
+    public int? Num2 { get; set; }
 
     /// <summary>
     /// 
     /// <seealso cref="Operation"/>
     /// </summary>
-    public Operation Op
-    {
-      get
-      {
-        return _op;
-      }
-      set
-      {
-        __isset.op = true;
-        this._op = value;
-      }
-    }
+    public Operation? Op { get; set; }
 
-    public string Comment
-    {
-      get
-      {
-        return _comment;
-      }
-      set
-      {
-        __isset.comment = true;
-        this._comment = value;
-      }
-    }
+    public string Comment { get; set; }
 
 
     public Isset __isset;
@@ -100,9 +65,6 @@ namespace Kaa.ThriftDemo.Service.Thrift
     #endif
     public struct Isset {
       public bool num1;
-      public bool num2;
-      public bool op;
-      public bool comment;
     }
 
     public Work() {
@@ -179,26 +141,26 @@ namespace Kaa.ThriftDemo.Service.Thrift
           field.Type = TType.I32;
           field.ID = 1;
           oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Num1);
+          oprot.WriteI32(Num1.Value);
           oprot.WriteFieldEnd();
         }
-        if (__isset.num2) {
+        if (Num2 != null) {
           field.Name = "num2";
           field.Type = TType.I32;
           field.ID = 2;
           oprot.WriteFieldBegin(field);
-          oprot.WriteI32(Num2);
+          oprot.WriteI32(Num2.Value);
           oprot.WriteFieldEnd();
         }
-        if (__isset.op) {
+        if (Op != null) {
           field.Name = "op";
           field.Type = TType.I32;
           field.ID = 3;
           oprot.WriteFieldBegin(field);
-          oprot.WriteI32((int)Op);
+          oprot.WriteI32((int)Op.Value);
           oprot.WriteFieldEnd();
         }
-        if (Comment != null && __isset.comment) {
+        if (Comment != null) {
           field.Name = "comment";
           field.Type = TType.String;
           field.ID = 4;
@@ -224,19 +186,19 @@ namespace Kaa.ThriftDemo.Service.Thrift
         __sb.Append("Num1: ");
         __sb.Append(Num1);
       }
-      if (__isset.num2) {
+      if (Num2 != null) {
         if(!__first) { __sb.Append(", "); }
         __first = false;
         __sb.Append("Num2: ");
         __sb.Append(Num2);
       }
-      if (__isset.op) {
+      if (Op != null) {
         if(!__first) { __sb.Append(", "); }
         __first = false;
         __sb.Append("Op: ");
         __sb.Append(Op);
       }
-      if (Comment != null && __isset.comment) {
+      if (Comment != null) {
         if(!__first) { __sb.Append(", "); }
         __first = false;
         __sb.Append("Comment: ");

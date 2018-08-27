@@ -9,6 +9,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
+using System.Threading.Tasks;
 using Thrift;
 using Thrift.Collections;
 using System.Runtime.Serialization;
@@ -26,44 +27,10 @@ namespace Kaa.ThriftDemo.Service.Thrift
   #endif
   public partial class InvalidOperation : TException, TBase
   {
-    private int _whatOp;
-    private string _why;
 
-    public int WhatOp
-    {
-      get
-      {
-        return _whatOp;
-      }
-      set
-      {
-        __isset.whatOp = true;
-        this._whatOp = value;
-      }
-    }
+    public int? WhatOp { get; set; }
 
-    public string Why
-    {
-      get
-      {
-        return _why;
-      }
-      set
-      {
-        __isset.why = true;
-        this._why = value;
-      }
-    }
-
-
-    public Isset __isset;
-    #if !SILVERLIGHT
-    [Serializable]
-    #endif
-    public struct Isset {
-      public bool whatOp;
-      public bool why;
-    }
+    public string Why { get; set; }
 
     public InvalidOperation() {
     }
@@ -118,15 +85,15 @@ namespace Kaa.ThriftDemo.Service.Thrift
         TStruct struc = new TStruct("InvalidOperation");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        if (__isset.whatOp) {
+        if (WhatOp != null) {
           field.Name = "whatOp";
           field.Type = TType.I32;
           field.ID = 1;
           oprot.WriteFieldBegin(field);
-          oprot.WriteI32(WhatOp);
+          oprot.WriteI32(WhatOp.Value);
           oprot.WriteFieldEnd();
         }
-        if (Why != null && __isset.why) {
+        if (Why != null) {
           field.Name = "why";
           field.Type = TType.String;
           field.ID = 2;
@@ -146,13 +113,13 @@ namespace Kaa.ThriftDemo.Service.Thrift
     public override string ToString() {
       StringBuilder __sb = new StringBuilder("InvalidOperation(");
       bool __first = true;
-      if (__isset.whatOp) {
+      if (WhatOp != null) {
         if(!__first) { __sb.Append(", "); }
         __first = false;
         __sb.Append("WhatOp: ");
         __sb.Append(WhatOp);
       }
-      if (Why != null && __isset.why) {
+      if (Why != null) {
         if(!__first) { __sb.Append(", "); }
         __first = false;
         __sb.Append("Why: ");
