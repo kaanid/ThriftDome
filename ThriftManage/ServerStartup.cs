@@ -19,19 +19,35 @@ using System.Linq;
 using System.Net.Security;
 using Thrift.Server;
 using System.Reflection;
+using Consul;
+using LogLevel = Microsoft.Extensions.Logging.LogLevel;
 
 namespace Kaa.ThriftDemo.ThriftManage
 {
     public class ServerStartup
     {
-        private static async Task RegisterConsul(ThriftServerConfig config,ILogger log)
+        private static async Task RegisterConsul(ThriftServerConfig config,ILogger log, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrWhiteSpace(config.Consul))
+            if (config.Consul!=null)
             {
                 log.LogInformation($"Incompetent registration on the Consul");
-            }
 
-            await Task.CompletedTask;
+                //api
+                var consulClinet = new ConsulManage(new Uri("http://127.0.0.1:8500"));
+                await consulClinet.RegisterServiceAsync(config,cancellationToken);
+            }
+        }
+
+        public static async Task Stop(ThriftServerConfig config, ILogger log, CancellationToken cancellationToken)
+        {
+            if (config.Consul != null)
+            {
+                log.LogInformation($"Incompetent deregistration on the Consul");
+
+                //api
+                var consulClinet = new ConsulManage(new Uri("http://127.0.0.1:8500"));
+                await consulClinet.DeregisterServiceAsync(config,cancellationToken);
+            }
         }
 
         public static async Task Init<T,T2>(ThriftServerConfig config, CancellationToken cancellationToken) 
@@ -141,7 +157,7 @@ namespace Kaa.ThriftDemo.ThriftManage
 
                 await server.ServeAsync(cancellationToken);
 
-                await RegisterConsul(config, Logger);
+                await RegisterConsul(config, Logger,cancellationToken);
             }
             catch (Exception ex)
             {

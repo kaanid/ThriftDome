@@ -9,6 +9,13 @@ namespace Kaa.ThriftDemo.ThriftManage
         public string Name { set; get; }
         public string ServiceName { set; get; }
         public int Port { set; get; }
-        public string Consul { set; get; }
+        public ConsulConfig Consul { set; get; }
+        
+    }
+
+    public class ConsulConfig
+    {
+        public string[] Tags { set; get; }
+        public bool Check { set; get; }
     }
 }
