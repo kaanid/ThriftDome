@@ -9,9 +9,9 @@ using Kaa.ThriftDemo.Service;
 
 namespace ConsoleApp33ThriftService
 {
+    [Interceptor]
     public class ThriftService : Calculator.IAsync
     {
-        [Interceptor]
         public async Task<int> addAsync(int num1, int num2, CancellationToken cancellationToken)
         {
             //await Task.Delay(1000 * 10);

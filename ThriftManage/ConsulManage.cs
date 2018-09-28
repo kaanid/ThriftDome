@@ -11,17 +11,21 @@ namespace Kaa.ThriftDemo.ThriftManage
     {
         private readonly ConsulClient _client;
 
-        public ConsulManage(Uri uri)
+        public ConsulManage(Uri uri, ConsulClient client=null)
         {
             if(uri==null)
             {
                 throw new ArgumentNullException(nameof(uri));
             }
-            _client= new ConsulClient(conf =>
+
+            if (client == null || client.Config.Address!=uri)
             {
-                conf.Address = uri;
-                conf.WaitTime = TimeSpan.FromSeconds(2);
-            });
+                _client = new ConsulClient(conf =>
+                 {
+                     conf.Address = uri;
+                     conf.WaitTime = TimeSpan.FromSeconds(2);
+                 });
+            }
         }
 
         public async Task<bool> RegisterServiceAsync(ThriftServerConfig confi, CancellationToken cancellationToken)
@@ -37,7 +41,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                 Meta = new Dictionary<string, string>() { { "a", "1" } },
                 Check = confi.Consul.Check ? new AgentServiceCheck
                 {
-                    Interval = TimeSpan.FromSeconds(4),
+                    Interval = TimeSpan.FromSeconds(10),
                     TCP = $"{ip}:{confi.Port}",
                     Timeout = TimeSpan.FromSeconds(2),
                 } : null
@@ -73,6 +77,24 @@ namespace Kaa.ThriftDemo.ThriftManage
         public async Task<bool> DeregisterServiceAsync(string serverName,CancellationToken cancellationToken=default(CancellationToken))
         {
             var result = await _client.Agent.ServiceDeregister(GetServiceId(serverName), cancellationToken);
+            if (result.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<bool> AddKV(string serverName,string methodName, string value, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await AddKV($"{serverName}/{Utils.LocalIPAddress().ToString()}/{methodName}",value,cancellationToken);
+        }
+        public async Task<bool> AddKV(string kvName,string value, CancellationToken cancellationToken = default(CancellationToken))
+        {
+
+            KVPair kv = new KVPair(kvName);
+            kv.Value = Encoding.UTF8.GetBytes(value);
+           
+            var result = await _client.KV.Put(kv, WriteOptions.Default);
             if (result.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 return true;

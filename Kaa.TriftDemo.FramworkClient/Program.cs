@@ -30,7 +30,7 @@ namespace Kaa.TriftDemo.FramworkClient
             try
             {
                 
-                TTransport transport = new TSocket("localhost", 9090, 2000);
+                TTransport transport = new TSocket("localhost", 9090, 20000);
                 //TBufferedTransport transport2 = new TBufferedTransport(transport, 2048);
                 TProtocol protocol = new TBinaryProtocol(transport);
 
@@ -42,7 +42,7 @@ namespace Kaa.TriftDemo.FramworkClient
 
                 Console.WriteLine($"Starting client... host:localhost port:9090");
 
-                int testCount = 100000;
+                int testCount = 1000;
                 Stopwatch sw = Stopwatch.StartNew();
                 foreach (var m in Enumerable.Range(0, testCount))
                 {
@@ -84,7 +84,8 @@ namespace Kaa.TriftDemo.FramworkClient
                 sw.Stop();
                 Console.WriteLine($"4 TBufferedTransport Execute client.addAsync(1, 1) do:{testCount} ms:{sw.ElapsedMilliseconds}");
 
-                transport2.Close();
+                client2.ping();
+
                 //Work work = new Work();
                 //work.Op = Operation.DIVIDE;
                 //work.Num1 = 1;
@@ -98,6 +99,8 @@ namespace Kaa.TriftDemo.FramworkClient
                 //{
                 //    Console.WriteLine("Invalid operation: " + io.Why);
                 //}
+
+                transport2.Close();
 
 
             }

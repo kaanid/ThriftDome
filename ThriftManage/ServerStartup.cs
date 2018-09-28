@@ -33,7 +33,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                 log.LogInformation($"Incompetent registration on the Consul");
 
                 //api
-                var consulClinet = new ConsulManage(new Uri("http://127.0.0.1:8500"));
+                var consulClinet = new ConsulManage(config.GetConsulUri());
                 await consulClinet.RegisterServiceAsync(config,cancellationToken);
             }
         }
@@ -45,7 +45,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                 log.LogInformation($"Incompetent deregistration on the Consul");
 
                 //api
-                var consulClinet = new ConsulManage(new Uri("http://127.0.0.1:8500"));
+                var consulClinet = new ConsulManage(config.GetConsulUri());
                 await consulClinet.DeregisterServiceAsync(config,cancellationToken);
             }
         }
@@ -54,7 +54,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             where T2 : ITAsyncProcessor
         {
             var fabric = new LoggerFactory()
-                .AddConsole(LogLevel.Trace)
+                .AddConsole(LogLevel.Information)
                 .AddDebug(LogLevel.Trace);
 
             ILogger Logger = fabric.CreateLogger(nameof(ServerStartup));

@@ -1,10 +1,12 @@
 ﻿using AspectCore.Extensions.DependencyInjection;
 using Kaa.ThriftDemo.Service;
 using Kaa.ThriftDemo.Service.Thrift;
+using Kaa.ThriftDemo.ThriftManage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using shared.d;
 using System;
 using System.Linq;
 using System.Threading;
@@ -42,16 +44,16 @@ namespace ConsoleApp33ThriftService
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);
                 })
-                .ConfigureLogging(logging => {
+                .ConfigureLogging((context,logging) => {
                     logging
+                        .AddConfiguration(context.Configuration.GetSection("Logging"))
                         .AddConsole()
                         .AddDebug();
                 })
                 .ConfigureServices(serviceColl => {
-                    serviceColl.AddSingleton<IHostedService, ThriftHost>();
+                    serviceColl.AddSingleton<IThriftServiceStatistics, ThriftServiceStatistics>();
                     serviceColl.AddSingleton<Calculator.IAsync, ThriftService>();
-                    //serviceColl.AddTransientInterfaceProxy(typeof(ISample));
-                    //serviceColl.AddInterfaceProxy(typeof(InterceptorAttribute),ServiceLifetime.Transient);
+                    serviceColl.AddSingleton<IHostedService, ThriftHost>();
                 })
                 .Build();
 

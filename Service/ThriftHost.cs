@@ -38,6 +38,7 @@ namespace Kaa.ThriftDemo.Service
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
+            _log.LogInformation("ThriftServe stop...");
             await ServerStartup.Stop(_thriftServerConfig, _log, cancellationToken);
             await base.StopAsync(cancellationToken);
         }
