@@ -1,25 +1,12 @@
-﻿using System;
-using shared.d;
+﻿using AspectCore.Extensions.DependencyInjection;
+using Kaa.ThriftDemo.Service;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
-
-using Thrift;
-using Thrift.Protocols;
-using Thrift.Server;
-using Thrift.Transports;
-using Thrift.Transports.Server;
-using System.Security.Cryptography.X509Certificates;
-using System.IO;
-using System.Net.Security;
-using Kaa.ThriftDemo.Service.Thrift;
-using Kaa.ThriftDemo.ThriftManage;
-using Microsoft.Extensions.Configuration;
-using System.Runtime.Loader;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Kaa.ThriftDemo.Service;
 
 namespace ConsoleApp33ThriftService
 {
@@ -37,6 +24,7 @@ namespace ConsoleApp33ThriftService
 
             var host = new HostBuilder()
                 .UseConsoleLifetime()
+                .UseServiceProviderFactory(new AspectCoreServiceProviderFactory())
                 .ConfigureHostConfiguration(conf =>
                 {
                     conf
@@ -52,15 +40,17 @@ namespace ConsoleApp33ThriftService
                         .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
                         .AddEnvironmentVariables()
                         .AddCommandLine(args);
-
                 })
                 .ConfigureLogging(logging => {
                     logging
                         .AddConsole()
                         .AddDebug();
                 })
-                .ConfigureServices(serviceColl=> {
+                .ConfigureServices(serviceColl => {
                     serviceColl.AddSingleton<IHostedService, ThriftHost>();
+                    serviceColl.AddTransient<ISample,Sammpleclass>();
+                    //serviceColl.AddTransientInterfaceProxy(typeof(ISample));
+                    //serviceColl.AddInterfaceProxy(typeof(InterceptorAttribute),ServiceLifetime.Transient);
                 })
                 .Build();
 

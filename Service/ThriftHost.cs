@@ -17,21 +17,24 @@ namespace Kaa.ThriftDemo.Service
         private ILogger<ThriftHost> _log;
         private IConfiguration _config;
         private readonly ThriftServerConfig _thriftServerConfig = null;
+        private ISample _sample;
 
-        public ThriftHost(ILogger<ThriftHost> log, IConfiguration config)
+        public ThriftHost(ILogger<ThriftHost> log, IConfiguration config, ISample sample)
         {
             _log = log;
             _config = config;
             _thriftServerConfig = _config.GetSection("ThriftService").Get<ThriftServerConfig>();
+            _sample = sample;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var thriftServerConfig = _config.GetSection("ThriftService").Get<ThriftServerConfig>();
+            _sample.Call();
+            _sample.Call();
             //_log.LogInformation("Press any key to stop...");
             _log.LogInformation("ThriftServe start...");
-            await ServerStartup.Init<ThriftService, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(thriftServerConfig, stoppingToken);
-
+            await ServerStartup.Init<ThriftService, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(_thriftServerConfig, stoppingToken);
+            //await Task.CompletedTask;
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)

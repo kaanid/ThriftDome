@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Thrift;
@@ -28,7 +30,7 @@ namespace Kaa.TriftDemo.FramworkClient
             try
             {
                 
-                TTransport transport = new TSocket("localhost", 9090, 100000);
+                TTransport transport = new TSocket("localhost", 9090, 2000);
                 //TBufferedTransport transport2 = new TBufferedTransport(transport, 2048);
                 TProtocol protocol = new TBinaryProtocol(transport);
 
@@ -102,6 +104,29 @@ namespace Kaa.TriftDemo.FramworkClient
             catch (TApplicationException x)
             {
                 Console.WriteLine(x.StackTrace);
+            }
+            catch (TTransportException tte)
+            {
+                Console.WriteLine(tte.Message);
+            }
+            catch (SocketException se)
+            {
+                Console.WriteLine(se);
+            }
+            catch (IOException ie)
+            {
+                if(ie.InnerException!=null)
+                {
+                    if(ie.InnerException is SocketException sex)
+                    {
+                        Console.WriteLine(sex);
+                    }
+                }
+                Console.WriteLine(ie);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
     }
