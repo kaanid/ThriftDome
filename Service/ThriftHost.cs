@@ -30,16 +30,15 @@ namespace Kaa.ThriftDemo.Service
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            //_log.LogInformation("Press any key to stop...");
-            _log.LogInformation("ThriftServe start...");
+            _log.LogInformation("ThriftHost start...");
             await ServerStartup.Init<Calculator.IAsync, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(_thriftServerConfig, _thriftService, stoppingToken);
-            //await Task.CompletedTask;
         }
 
         public override async Task StopAsync(CancellationToken cancellationToken)
         {
-            _log.LogInformation("ThriftServe stop...");
+            _log.LogInformation("ThriftHost stop...");
             await ServerStartup.Stop(_thriftServerConfig, _log, cancellationToken);
+            await Task.Delay(2000);
             await base.StopAsync(cancellationToken);
         }
     }

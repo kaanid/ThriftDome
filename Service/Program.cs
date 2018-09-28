@@ -18,13 +18,6 @@ namespace ConsoleApp33ThriftService
 
         static void Main(string[] args)
         {
-            args = args ?? new string[0];
-            if (args.Any(x => x.StartsWith("-help", StringComparison.OrdinalIgnoreCase)))
-            {
-                DisplayHelp();
-                return;
-            }
-
             var host = new HostBuilder()
                 .UseConsoleLifetime()
                 .UseServiceProviderFactory(new AspectCoreServiceProviderFactory())
@@ -57,9 +50,12 @@ namespace ConsoleApp33ThriftService
                 })
                 .Build();
 
-
             var log=host.Services.GetRequiredService<ILogger<Program>>();
 
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) => {
+                Console.WriteLine($"UnhandledException,app is terminating:{e.IsTerminating} exception:{e.ExceptionObject}");
+                log.LogError(e.ExceptionObject as Exception, $"UnhandledException,app is terminating:{e.IsTerminating}");
+            };
 
             using (var source = new CancellationTokenSource())
             {
@@ -69,35 +65,6 @@ namespace ConsoleApp33ThriftService
                 Console.ReadLine();
                 source.Cancel();
             }
-
-            
-        }
-
-        private static void DisplayHelp()
-        {
-            Console.WriteLine(@"
-            Usage: 
-                Server.exe -help
-                    will diplay help information 
-                Server.exe -tr:<transport> -pr:<protocol>
-                    will run server with specified arguments (tcp transport and binary protocol by default)
-            Options:
-                -tr (transport): 
-                    tcp - (default) tcp transport will be used (host - ""localhost"", port - 9090)
-                    tcpbuffered - tcp buffered transport will be used (host - ""localhost"", port - 9090)
-                    namedpipe - namedpipe transport will be used (pipe address - "".test"")
-                    http - http transport will be used (http address - ""localhost:9090"")
-                    tcptls - tcp transport with tls will be used (host - ""localhost"", port - 9090)
-                    framed - tcp framed transport will be used (host - ""localhost"", port - 9090)
-                -pr (protocol): 
-                    binary - (default) binary protocol will be used
-                    compact - compact protocol will be used
-                    json - json protocol will be used
-                    multiplexed - multiplexed protocol will be used
-            Sample:
-                Server.exe -tr:tcp 
-            ");
-
         }
     }
 }

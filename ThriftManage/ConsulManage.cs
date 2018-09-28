@@ -84,10 +84,16 @@ namespace Kaa.ThriftDemo.ThriftManage
             return false;
         }
 
-        public async Task<bool> AddKV(string serverName,string methodName, string value, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<bool> AddKVServiceMethod(string serverName,string methodName, string value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await AddKV($"{serverName}/{Utils.LocalIPAddress().ToString()}/{methodName}",value,cancellationToken);
+            return await AddKV($"Service-{serverName}/{Utils.LocalIPAddress().ToString()}/{methodName}",value,cancellationToken);
         }
+
+        public async Task<bool> AddKVClientApp(string appName,string callServerName, string value, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            return await AddKV($"Client-{appName}/{callServerName}", value, cancellationToken);
+        }
+
         public async Task<bool> AddKV(string kvName,string value, CancellationToken cancellationToken = default(CancellationToken))
         {
 

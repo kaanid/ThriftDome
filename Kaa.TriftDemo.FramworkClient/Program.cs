@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Thrift;
 using Thrift.Protocol;
 using Thrift.Transport;
+using Consul;
 
 namespace Kaa.TriftDemo.FramworkClient
 {
@@ -25,16 +26,40 @@ namespace Kaa.TriftDemo.FramworkClient
             }).Wait();
         }
 
+        static async Task<bool> RegisertConsul(string appName,string callServiceName)
+        {
+            using (var client = new ConsulClient(conf=> {
+                conf.Address = new Uri("http://127.0.0.1:8500");
+            }))
+            {
+                KVPair kv = new KVPair($"clinet-{appName}/{callServiceName}");
+                kv.Value = Encoding.UTF8.GetBytes(DateTime.Now.ToString());
+
+                var result = await client.KV.Put(kv, WriteOptions.Default);
+                if (result.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
         static async Task Run()
         {
             try
             {
-                
-                TTransport transport = new TSocket("localhost", 9090, 20000);
-                //TBufferedTransport transport2 = new TBufferedTransport(transport, 2048);
-                TProtocol protocol = new TBinaryProtocol(transport);
+                string appName = "FrameworkClient";
+                string serviceName = "KaaService";
+                string host = "online.kaaservice.service.consul";
+                //string host = "127.0.0.1";
+                //string host = "localhost";
 
+
+                TTransport transport = new TSocket(host, 9090, 20000);
+                TProtocol protocol = new TBinaryProtocol(transport);
                 transport.Open();
+
+                await RegisertConsul(appName, serviceName);
 
                 Calculator.Client client = new Calculator.Client(protocol);
                 //var processor = new Calculator.AsyncProcessor(client);

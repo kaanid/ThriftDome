@@ -17,7 +17,7 @@ namespace Kaa.ThriftDemo.ThriftManage
     public class ClientStartup
     {
         private static ConcurrentDictionary<Type, object> concurrentDict = new ConcurrentDictionary<Type, object>();
-        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken, bool isOpen = false) where T: TBaseClient
+        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken,string appName, bool isOpen = false) where T: TBaseClient
         {
             var type = typeof(T);
             bool flag=concurrentDict.TryGetValue(type, out object obj);
@@ -28,29 +28,36 @@ namespace Kaa.ThriftDemo.ThriftManage
 
             //Console.WriteLine($"GetByCache type:{type}");
 
-            var newT = await Get<T>(config, cancellationToken, isOpen);
+            var newT = await Get<T>(config, cancellationToken,appName, isOpen);
             concurrentDict.TryAdd(type,newT);
             return newT;
         }
 
-        private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftClientConfig config)
+        private static IPEndPoint GetIPEndPointFromConsul(ThriftClientConfig config)
         {
-            Console.WriteLine("GetIPEndPointFromConsul read...");
-            var ip = new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
-            return await Task.FromResult(ip);
+            Console.WriteLine($"GetIPEndPointFromConsul read... dns:{config.ConsulService}");
+            IPHostEntry host = Dns.GetHostEntry(config.ConsulService);
+            if(host==null || host.AddressList.Length==0)
+            {
+                throw new ArgumentNullException(config.ConsulService, "Consul dns is null");
+            }
+            var len = host.AddressList.Length;
+            IPAddress address = host.AddressList[(len-1)%(1+DateTime.Now.Second)];
+
+            return new IPEndPoint(address, config.Port);
         }
 
         private static IPEndPoint GetIPEndPointFromConfig(ThriftClientConfig config)
         {
-            if(config.IP==null)
+            if(string.IsNullOrEmpty(config.IPHost))
             {
-                throw new ArgumentNullException(nameof(config.IP));
+                throw new ArgumentNullException(nameof(config.IPHost));
             }
 
-            return new IPEndPoint(IPAddress.Parse(config.IP.Host), config.IP.Port);
+            return new IPEndPoint(IPAddress.Parse(config.IPHost), config.Port);
         }
 
-        public static async Task<T> Get<T>(ThriftClientConfig config, CancellationToken cancellationToken,bool isOpen=false) where T : TBaseClient
+        public static async Task<T> Get<T>(ThriftClientConfig config, CancellationToken cancellationToken, string appName, bool isOpen=false) where T : TBaseClient
         {
             IPEndPoint ipEndPoint = null;
             //var ipEndPoint = new IPEndPoint(new IPAddress(new byte[] { 127, 0, 0, 1 }), 9090);
@@ -58,17 +65,23 @@ namespace Kaa.ThriftDemo.ThriftManage
             if (config == null)
                 throw new ArgumentNullException(nameof(config));
 
-            if(string.IsNullOrWhiteSpace(config.Consul))
+            if(config.Port==0)
+                throw new ArgumentNullException(nameof(config.Port));
+
+            string hostName = null;
+            if (string.IsNullOrWhiteSpace(config.ConsulService))
             {
                 ipEndPoint = GetIPEndPointFromConfig(config);
             }
             else
             {
-                ipEndPoint =await GetIPEndPointFromConsul(config);
+                //ipEndPoint =GetIPEndPointFromConsul(config);
+                ipEndPoint = new IPEndPoint(0, config.Port);
+                hostName = config.ConsulService;
             }
 
 
-            var transport = GetTransport(Transport.TcpBuffered, ipEndPoint);
+            var transport = GetTransport(Transport.TcpBuffered, ipEndPoint,hostName:hostName);
             var tProtocol = GetProtocol(Protocol.Binary, transport);
 
             Console.WriteLine($"GetByOpen transport:{transport} protocol:{tProtocol} ip:{ipEndPoint.Address.ToString()} port:{ipEndPoint.Port}");
@@ -78,6 +91,9 @@ namespace Kaa.ThriftDemo.ThriftManage
             {
                 await client.OpenTransportAsync(cancellationToken);
             }
+
+            //consul
+            await RegisterConsul(config,appName,cancellationToken);
 
             return client;
         }
@@ -100,7 +116,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             return client as T;
         }
 
-        private static TClientTransport GetTransport(Transport selectedTransport, IPEndPoint ipEndPoint =null,string uri=null,string namedPipe=null)
+        private static TClientTransport GetTransport(Transport selectedTransport, IPEndPoint ipEndPoint =null,string uri=null,string namedPipe=null,string hostName=null)
         {
             switch (selectedTransport)
             {
@@ -124,15 +140,15 @@ namespace Kaa.ThriftDemo.ThriftManage
             switch (selectedTransport)
             {
                 case Transport.Tcp:
-                    return new TSocketClientTransport(ipEndPoint.Address,ipEndPoint.Port);
+                    return new TSocketClientTransportSupportDns(ipEndPoint.Address,ipEndPoint.Port,hostName: hostName);
                 case Transport.NamedPipe:
                     return new TNamedPipeClientTransport(".test");
                 case Transport.Http:
                     return new THttpClientTransport(new Uri(uri),null);
                 case Transport.TcpBuffered:
-                    return new TBufferedClientTransport(new TSocketClientTransport(ipEndPoint.Address, ipEndPoint.Port));
+                    return new TBufferedClientTransport(new TSocketClientTransportSupportDns(ipEndPoint.Address, ipEndPoint.Port, hostName: hostName));
                 case Transport.Framed:
-                    return new TFramedClientTransport(new TSocketClientTransport(ipEndPoint.Address, ipEndPoint.Port));
+                    return new TFramedClientTransport(new TSocketClientTransportSupportDns(ipEndPoint.Address, ipEndPoint.Port, hostName: hostName));
                 default:
                     throw new NotSupportedException(selectedTransport.ToString());
             }
@@ -152,6 +168,18 @@ namespace Kaa.ThriftDemo.ThriftManage
                     return new TBinaryProtocol(transport);
                 default:
                     throw new NotSupportedException(selectedProtocol.ToString());
+            }
+        }
+
+        private static async Task RegisterConsul(ThriftClientConfig config,string appName, CancellationToken cancellationToken)
+        {
+            if (config.Consul != null)
+            {
+                Console.WriteLine($"Incompetent registration on the Consul");
+
+                //api
+                var consulClinet = new ConsulManage(config.GetConsulUri());
+                await consulClinet.AddKVClientApp(appName, config.Name,DateTime.Now.ToString(), cancellationToken);
             }
         }
     }

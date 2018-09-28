@@ -9,6 +9,7 @@ namespace Kaa.ThriftDemo.ThriftManage
 {
     public class ThriftServiceStatistics : IThriftServiceStatistics
     {
+        private const int UPDATACOUNT = 100;
         private static object objLock = new object();
         public readonly Dictionary<string, CountModel> dict;
         private readonly ThriftServerConfig  _config;
@@ -45,7 +46,8 @@ namespace Kaa.ThriftDemo.ThriftManage
 
             if (_config.Consul != null && model.Count > model.NextUpdate)
             {
-                model.NextUpdate = model.NextUpdate + 100;
+                model.NextUpdate = model.NextUpdate/UPDATACOUNT< 100? model.NextUpdate + UPDATACOUNT: model.NextUpdate + UPDATACOUNT*2;
+               
                 Task.Run(async () => {
                     await UpdateConsulKv(methodName, model);
                 });
@@ -58,7 +60,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             _log.LogTrace($"UpdateConsulKv methodName:{methodName} model:{model.Count} next:{model.NextUpdate}");
             //更新
             var manage = new ConsulManage(_config.GetConsulUri());
-            var flag = await manage.AddKV(_config.Name, methodName, model.Count.ToString());
+            var flag = await manage.AddKVServiceMethod(_config.Name, methodName, model.Count.ToString());
         }
     }
 

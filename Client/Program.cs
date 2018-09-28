@@ -19,13 +19,18 @@ namespace Client
 {
     class Program
     {
-        private static readonly ILogger Logger = new LoggerFactory().AddConsole().AddDebug().CreateLogger(nameof(Client));
+        private static readonly ILogger Logger = new LoggerFactory()
+            .AddConsole()
+            .AddDebug()
+            .CreateLogger(nameof(Client));
         private static IConfiguration _config = null;
 
         static void Main(string[] args)
         {
             _config = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
+                .AddJsonFile("kaa.service1.config.json",true,true)
+                //.AddJsonFile("kaa.service2.config.json", true, true)
                 .Build();
 
             if (args.Any(x => x.StartsWith("-help", StringComparison.OrdinalIgnoreCase)))
@@ -33,6 +38,8 @@ namespace Client
                 DisplayHelp();
                 return;
             }
+
+            //var str=Environment.GetEnvironmentVariable("aaa");
 
             Logger.LogInformation("Starting client...");
 
@@ -42,6 +49,8 @@ namespace Client
                 Thread.Sleep(2000);
                 //source.Cancel();
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
+
+                source.CancelAfter(1000);
             }
 
             Thread.Sleep(500);
@@ -50,26 +59,17 @@ namespace Client
 
         private static async Task RunAsync(string[] args,CancellationToken cancellationToken)
         {
-            var clientConfigList = _config.GetSection("ThriftService").Get<List<ThriftClientConfig>>();
-            var clientConfig = clientConfigList.FirstOrDefault(m => m.ServiceName.EndsWith(nameof(Calculator.Client)));
+            //var clientConfigList = _config.GetSection("ThriftService").Get<List<ThriftClientConfig>>();
+            //var clientConfig = clientConfigList.FirstOrDefault(m => m.ServiceName.EndsWith(nameof(Calculator.Client)));
+            //var clientConfig2 = _config.Get<List<ThriftClientConfig>>();
+            var clientConfig = _config.Get<ThriftClientConfig>();
+            var appName = _config["AppName"].ToString();
 
-            var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken,true);
+            var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken, appName,true);
             await ExecuteCalculatorClientTest(cancellationToken, client);
 
-            //Task.WaitAll(tasks);
-
-            //await Task.FromResult(1);
             await Task.CompletedTask;
 
-        }
-
-        private static async Task ExecuteSharedServiceClientOperations(CancellationToken cancellationToken,SharedService.Client client)
-        {
-            await client.OpenTransportAsync(cancellationToken);
-
-            Logger.LogInformation($"{client.ClientId} SharedService GetStructAsync(1)");
-            var log = await client.getStructAsync(1, cancellationToken);
-            Logger.LogInformation($"{client.ClientId} SharedService Value: {log.Value}");
         }
 
         private static async Task ExecuteCalculatorClientTest(CancellationToken cancellationToken, Calculator.IAsync client)
@@ -85,43 +85,6 @@ namespace Client
 
             sw.Stop();
             Logger.LogInformation($"ExecuteCalculatorClientTest AddAsync(1,1) do:{max} ms:{sw.ElapsedMilliseconds}");
-        }
-
-        private static async Task ExecuteCalculatorClientOperations(CancellationToken cancellationToken,Calculator.Client client)
-        {
-            await client.OpenTransportAsync(cancellationToken);
-
-            Logger.LogInformation($"{client.ClientId} PingAsync()");
-            await client.pingAsync(cancellationToken);
-
-            Logger.LogInformation($"{client.ClientId} AddAsync(1,1)");
-            var sum=await client.addAsync(1, 1, cancellationToken);
-            Logger.LogInformation($"{client.ClientId} AddAsync(1,1)={sum}");
-
-            var work = new Work
-            {
-                Op = Operation.DIVIDE,
-                Num1 = 1,
-                Num2 = 0
-            };
-
-            try
-            {
-                Logger.LogInformation($"{client.ClientId} CalculateAsync(1)");
-                var n=await client.calculateAsync(1, work, cancellationToken);
-                Logger.LogInformation($"{client.ClientId} Whoa we can divide by 0 n:{n}");
-            }
-            catch (InvalidOperation io)
-            {
-                Logger.LogInformation($"{client.ClientId} Invalid operation: " + io);
-            }
-
-            Logger.LogInformation($"{client.ClientId} GetStructAsync(1)");
-            var log = await client.getStructAsync(1, cancellationToken);
-            Logger.LogInformation($"{client.ClientId} Check log: {log.Value}");
-
-            Logger.LogInformation($"{client.ClientId} ZipAsync() with delay 100mc on server side");
-            await client.zipAsync(cancellationToken);
         }
 
         private static void DisplayHelp()

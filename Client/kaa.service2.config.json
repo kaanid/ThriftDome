@@ -1,0 +1,10 @@
+﻿{
+      "Name": "KaaService2",
+      "ServiceName": "Kaa.ThriftDemo.Service.Thrift.Calculator.Client",
+      "IP": {
+        "Host": "127.0.0.1",
+        "Port": 9090
+      },
+      "Consul": ""
+ }
+
