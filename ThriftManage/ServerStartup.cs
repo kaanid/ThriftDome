@@ -50,8 +50,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             }
         }
 
-        public static async Task Init<T,T2>(ThriftServerConfig config, CancellationToken cancellationToken) 
-            where T:new() 
+        public static async Task Init<T,T2>(ThriftServerConfig config,T handler, CancellationToken cancellationToken) 
             where T2 : ITAsyncProcessor
         {
             var fabric = new LoggerFactory()
@@ -66,7 +65,7 @@ namespace Kaa.ThriftDemo.ThriftManage
 
 
             var typeT2 = typeof(T2);
-            var handler = new T();
+            //var handler = new T();
 
             ITAsyncProcessor processor = null;
             TServerTransport serverTransport = null;

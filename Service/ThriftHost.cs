@@ -1,4 +1,5 @@
 ﻿using ConsoleApp33ThriftService;
+using Kaa.ThriftDemo.Service.Thrift;
 using Kaa.ThriftDemo.ThriftManage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -17,23 +18,21 @@ namespace Kaa.ThriftDemo.Service
         private ILogger<ThriftHost> _log;
         private IConfiguration _config;
         private readonly ThriftServerConfig _thriftServerConfig = null;
-        private ISample _sample;
+        private Calculator.IAsync _thriftService;
 
-        public ThriftHost(ILogger<ThriftHost> log, IConfiguration config, ISample sample)
+        public ThriftHost(ILogger<ThriftHost> log, IConfiguration config, Calculator.IAsync thriftService)
         {
             _log = log;
             _config = config;
             _thriftServerConfig = _config.GetSection("ThriftService").Get<ThriftServerConfig>();
-            _sample = sample;
+            _thriftService = thriftService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _sample.Call();
-            _sample.Call();
             //_log.LogInformation("Press any key to stop...");
             _log.LogInformation("ThriftServe start...");
-            await ServerStartup.Init<ThriftService, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(_thriftServerConfig, stoppingToken);
+            await ServerStartup.Init<Calculator.IAsync, Kaa.ThriftDemo.Service.Thrift.Calculator.AsyncProcessor>(_thriftServerConfig, _thriftService, stoppingToken);
             //await Task.CompletedTask;
         }
 

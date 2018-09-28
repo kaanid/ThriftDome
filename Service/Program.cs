@@ -1,5 +1,6 @@
 ﻿using AspectCore.Extensions.DependencyInjection;
 using Kaa.ThriftDemo.Service;
+using Kaa.ThriftDemo.Service.Thrift;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,7 +49,7 @@ namespace ConsoleApp33ThriftService
                 })
                 .ConfigureServices(serviceColl => {
                     serviceColl.AddSingleton<IHostedService, ThriftHost>();
-                    serviceColl.AddTransient<ISample,Sammpleclass>();
+                    serviceColl.AddSingleton<Calculator.IAsync, ThriftService>();
                     //serviceColl.AddTransientInterfaceProxy(typeof(ISample));
                     //serviceColl.AddInterfaceProxy(typeof(InterceptorAttribute),ServiceLifetime.Transient);
                 })
