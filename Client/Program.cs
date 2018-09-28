@@ -46,8 +46,12 @@ namespace Client
             using (var source = new CancellationTokenSource())
             {
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
+
                 Thread.Sleep(2000);
-                //source.Cancel();
+                RunAsync(args, source.Token).GetAwaiter().GetResult();
+
+
+                Thread.Sleep(2000);
                 RunAsync(args, source.Token).GetAwaiter().GetResult();
 
                 source.CancelAfter(1000);
@@ -66,6 +70,7 @@ namespace Client
             var appName = _config["AppName"].ToString();
 
             var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken, appName,true);
+            //var client = await ClientStartup.Get<Calculator.Client>(clientConfig, cancellationToken, appName, true);
             await ExecuteCalculatorClientTest(cancellationToken, client);
 
             await Task.CompletedTask;
@@ -76,11 +81,21 @@ namespace Client
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            int max = 100000;
+            int max = 100;
             foreach(var i in Enumerable.Range(0, max))
             {
-                var sum = await client.addAsync(1, 1, cancellationToken);
-                //Logger.LogInformation($"{client.ClientId} AddAsync(1,1)={sum}");
+                try
+                {
+                    var sum = await client.addAsync(1, 1, cancellationToken);
+                    if (sum != 2)
+                    {
+                        Logger.LogInformation($" AddAsync(1,1)={sum}");
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Logger.LogError(ex, ex.Message);
+                }
             }
 
             sw.Stop();

@@ -259,3 +259,8 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+/Kaa.ThriftDemo.ServerDocker/*.dll
+/Kaa.ThriftDemo.ServerDocker/*.json
+/Kaa.ThriftDemo.ServerDocker/*.config
+/Kaa.ThriftDemo.ServerDocker/runtimes/*

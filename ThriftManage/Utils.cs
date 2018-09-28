@@ -24,5 +24,17 @@ namespace Kaa.ThriftDemo.ThriftManage
             var lists = LocalIPAddressList();
             return lists?.FirstOrDefault()?.Address;
         }
+
+        public static void LocalIPListPrint()
+        {
+            int i = 0;
+            var lists = LocalIPAddressList();
+
+            Console.WriteLine($"LocalIPList:");
+            foreach (var ip in lists)
+            {   
+                Console.WriteLine($"{++i} ip:{ip.Address}");
+            }
+        }
     }
 }

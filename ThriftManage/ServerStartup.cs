@@ -156,11 +156,14 @@ namespace Kaa.ThriftDemo.ThriftManage
 
                 await server.ServeAsync(cancellationToken);
 
+
+                Utils.LocalIPListPrint();
                 await RegisterConsul(config, Logger,cancellationToken);
             }
             catch (Exception ex)
             {
                 Logger.LogInformation(ex, ex.Message);
+                throw;
             }
         }
 

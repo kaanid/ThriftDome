@@ -14,22 +14,48 @@ using Kaa.ThriftDemo.ThriftManage;
 
 namespace Kaa.ThriftDemo.ThriftManage
 {
+    public class TClientModel
+    {
+        public TBaseClient Client { set; get; }
+        public DateTime FlushTime { set; get; } = DateTime.Now;
+        public int Seconds { set; get; } = 20;
+        public bool IsClose { set; get; }
+    }
     public class ClientStartup
     {
-        private static ConcurrentDictionary<Type, object> concurrentDict = new ConcurrentDictionary<Type, object>();
+        private static ConcurrentDictionary<Type, TClientModel> concurrentDict = new ConcurrentDictionary<Type, TClientModel>();
+
+        public static T Service<T>(T service) where T : TBaseClient
+        {
+            return service;
+        }
+
         public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken,string appName, bool isOpen = false) where T: TBaseClient
         {
             var type = typeof(T);
-            bool flag=concurrentDict.TryGetValue(type, out object obj);
+            bool flag=concurrentDict.TryGetValue(type, out TClientModel obj);
             if(flag)
             {
-                return obj as T;
+                var client = obj.Client as T;
+                if (obj.Client.InputProtocol.Transport.IsOpen && obj.FlushTime>DateTime.Now.AddSeconds(-obj.Seconds))
+                {
+                    if (client != null)
+                        return client;
+                }
+                else if(obj.Client.InputProtocol.Transport.IsOpen)
+                {
+                    obj.Client.Dispose();
+                }
             }
 
-            //Console.WriteLine($"GetByCache type:{type}");
+            Console.WriteLine($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
 
             var newT = await Get<T>(config, cancellationToken,appName, isOpen);
-            concurrentDict.TryAdd(type,newT);
+            var newModel = new TClientModel() {
+                Client = newT,
+            };
+
+            concurrentDict.AddOrUpdate(type, newModel, (typeV,objV)=> newModel);
             return newT;
         }
 
