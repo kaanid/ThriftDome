@@ -88,7 +88,7 @@ namespace Kaa.ThriftDemo.ThriftManage
 
         public async Task<bool> AddKVServiceMethod(string serverName,int port, string methodName,string value, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await AddKV($"Service-{serverName}/{Utils.LocalIPAddress().ToString()}/{methodName}",value,cancellationToken);
+            return await AddKV($"Service-{serverName}/{Utils.LocalIPAddress().ToString()}-{port}/{methodName}",value,cancellationToken);
         }
 
         public async Task<bool> AddKVClientApp(string appName,string callServerName, string value, CancellationToken cancellationToken = default(CancellationToken))
