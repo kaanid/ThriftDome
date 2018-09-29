@@ -19,18 +19,13 @@ namespace Kaa.ThriftDemo.ThriftManage
     {
         public TBaseClient Client { set; get; }
         public DateTime FlushTime { set; get; } = DateTime.Now;
-        public int Seconds { set; get; } = 2;
+        public int Seconds { set; get; } = 60;
         public bool IsClose { set; get; }
     }
     public class ClientStartup
     {
         private static ConcurrentDictionary<Type, TClientModel> concurrentDict = new ConcurrentDictionary<Type, TClientModel>();
-
-        public static T Service<T>(T service) where T : TBaseClient
-        {
-            return service;
-        }
-
+        private static Timer liveWatch = null;
         public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken, string appName, bool isOpen = false) where T : TBaseClient
         {
             var type = typeof(T);
@@ -38,15 +33,16 @@ namespace Kaa.ThriftDemo.ThriftManage
             if (flag)
             {
                 var client = obj.Client as T;
-                if (obj.Client.InputProtocol.Transport.IsOpen && obj.FlushTime > DateTime.Now.AddSeconds(-obj.Seconds))
-                {
-                    if (client != null)
-                        return client;
-                }
-                else if (obj.Client.InputProtocol.Transport.IsOpen)
-                {
-                    obj.Client.Dispose();
-                }
+                if (client != null)
+                    return client;
+
+                //bool isLive =await CheckConnectLiveAsync(obj);
+                //if(isLive)
+                //{
+                //    var client = obj.Client as T;
+                //    if (client != null)
+                //        return client;
+                //}
             }
 
             //Console.WriteLine($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
@@ -57,7 +53,62 @@ namespace Kaa.ThriftDemo.ThriftManage
             };
 
             concurrentDict.AddOrUpdate(type, newModel, (typeV, objV) => newModel);
+            CheckLiveTask();
+            //Console.ReadLine();
+
             return newT;
+        }
+
+        private static void CheckLiveTask()
+        {
+            if (liveWatch != null)
+                return;
+
+            int count = 0;
+            liveWatch = new Timer(obj => {
+                Console.WriteLine($"CheckLiveTask time:{DateTime.Now}..... Count:{count++}");
+                
+                if(concurrentDict.Count>0)
+                {
+                    foreach(var m in concurrentDict.Values)
+                    {
+                        var t=CheckConnectLiveAsync(m, true);
+                    }
+                }
+                if(count>int.MaxValue-100)
+                {
+                    count = 0;
+                }
+            }, null, 6000, 10000);
+        }
+
+        private static async Task<bool> CheckConnectLiveAsync(TClientModel model,bool isLiveCheck=false)
+        {
+            if (model.Client.InputProtocol.Transport.IsOpen)
+            {
+                bool flag = true;
+                if (isLiveCheck || model.FlushTime < DateTime.Now.AddSeconds(-model.Seconds))
+                {
+                    try
+                    {
+                        model.FlushTime = DateTime.Now;
+                        //检查链接是否断开
+                        await model.Client.OutputProtocol.WriteMessageBeginAsync(new Thrift.Protocols.Entities.TMessage("livecheck", Thrift.Protocols.Entities.TMessageType.Oneway, 0));
+                        await model.Client.OutputProtocol.WriteMessageEndAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        flag = false;
+                    }
+                }
+
+                if (flag)
+                    return flag;
+
+                model.Client.Dispose();
+            }
+            return false;
         }
 
         private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftClientConfig config)
@@ -76,7 +127,7 @@ namespace Kaa.ThriftDemo.ThriftManage
 
         private static async Task<IPEndPoint> GetIPEndPointFromConsulSupplierMorePort(ThriftClientConfig config, CancellationToken cancellationToken)
         {
-            Console.WriteLine($"GetIPEndPointFromConsulSupplierMorePort read... MorePort:{config.ConsulService}");
+            Console.WriteLine($"GetIPEndPointFromConsulSupplierMorePort read... MorePort");
 
             using (var consulClinet = new ConsulManage(config.GetConsulUri()))
             {

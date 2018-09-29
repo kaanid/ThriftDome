@@ -198,6 +198,9 @@ namespace Kaa.ThriftDemo.Service.Thrift
 
           if (fn == null)
           {
+            if (msg.Name == "livecheck")
+                return true;
+
             await TProtocolUtil.SkipAsync(iprot, TType.Struct, cancellationToken);
             await iprot.ReadMessageEndAsync(cancellationToken);
             var x = new TApplicationException (TApplicationException.ExceptionType.UnknownMethod, "Invalid method name: '" + msg.Name + "'");
