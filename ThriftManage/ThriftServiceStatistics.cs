@@ -59,8 +59,10 @@ namespace Kaa.ThriftDemo.ThriftManage
         {
             _log.LogTrace($"UpdateConsulKv methodName:{methodName} model:{model.Count} next:{model.NextUpdate}");
             //更新
-            var manage = new ConsulManage(_config.GetConsulUri());
-            var flag = await manage.AddKVServiceMethod(_config.Name, methodName, model.Count.ToString());
+            using (var manage = new ConsulManage(_config.GetConsulUri()))
+            {
+                var flag = await manage.AddKVServiceMethod(_config.Name,_config.Port, methodName, model.Count.ToString());
+            }
         }
     }
 

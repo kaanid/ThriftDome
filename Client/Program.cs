@@ -81,7 +81,7 @@ namespace Client
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            int max = 100;
+            int max = 10000;
             foreach(var i in Enumerable.Range(0, max))
             {
                 try

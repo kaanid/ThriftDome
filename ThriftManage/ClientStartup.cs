@@ -11,6 +11,7 @@ using Thrift.Protocols;
 using Thrift.Transports;
 using Thrift.Transports.Client;
 using Kaa.ThriftDemo.ThriftManage;
+using Consul;
 
 namespace Kaa.ThriftDemo.ThriftManage
 {
@@ -18,7 +19,7 @@ namespace Kaa.ThriftDemo.ThriftManage
     {
         public TBaseClient Client { set; get; }
         public DateTime FlushTime { set; get; } = DateTime.Now;
-        public int Seconds { set; get; } = 20;
+        public int Seconds { set; get; } = 2;
         public bool IsClose { set; get; }
     }
     public class ClientStartup
@@ -30,47 +31,65 @@ namespace Kaa.ThriftDemo.ThriftManage
             return service;
         }
 
-        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken,string appName, bool isOpen = false) where T: TBaseClient
+        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken, string appName, bool isOpen = false) where T : TBaseClient
         {
             var type = typeof(T);
-            bool flag=concurrentDict.TryGetValue(type, out TClientModel obj);
-            if(flag)
+            bool flag = concurrentDict.TryGetValue(type, out TClientModel obj);
+            if (flag)
             {
                 var client = obj.Client as T;
-                if (obj.Client.InputProtocol.Transport.IsOpen && obj.FlushTime>DateTime.Now.AddSeconds(-obj.Seconds))
+                if (obj.Client.InputProtocol.Transport.IsOpen && obj.FlushTime > DateTime.Now.AddSeconds(-obj.Seconds))
                 {
                     if (client != null)
                         return client;
                 }
-                else if(obj.Client.InputProtocol.Transport.IsOpen)
+                else if (obj.Client.InputProtocol.Transport.IsOpen)
                 {
                     obj.Client.Dispose();
                 }
             }
 
-            Console.WriteLine($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
+            //Console.WriteLine($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
 
-            var newT = await Get<T>(config, cancellationToken,appName, isOpen);
+            var newT = await Get<T>(config, cancellationToken, appName, isOpen);
             var newModel = new TClientModel() {
                 Client = newT,
             };
 
-            concurrentDict.AddOrUpdate(type, newModel, (typeV,objV)=> newModel);
+            concurrentDict.AddOrUpdate(type, newModel, (typeV, objV) => newModel);
             return newT;
         }
 
-        private static IPEndPoint GetIPEndPointFromConsul(ThriftClientConfig config)
+        private static async Task<IPEndPoint> GetIPEndPointFromConsul(ThriftClientConfig config)
         {
             Console.WriteLine($"GetIPEndPointFromConsul read... dns:{config.ConsulService}");
-            IPHostEntry host = Dns.GetHostEntry(config.ConsulService);
-            if(host==null || host.AddressList.Length==0)
+            IPHostEntry host = await Dns.GetHostEntryAsync(config.ConsulService);
+            if (host == null || host.AddressList.Length == 0)
             {
                 throw new ArgumentNullException(config.ConsulService, "Consul dns is null");
             }
             var len = host.AddressList.Length;
-            IPAddress address = host.AddressList[(len-1)%(1+DateTime.Now.Second)];
+            IPAddress address = host.AddressList[(len - 1) % (1 + DateTime.Now.Second)];
 
             return new IPEndPoint(address, config.Port);
+        }
+
+        private static async Task<IPEndPoint> GetIPEndPointFromConsulSupplierMorePort(ThriftClientConfig config, CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"GetIPEndPointFromConsulSupplierMorePort read... MorePort:{config.ConsulService}");
+
+            using (var consulClinet = new ConsulManage(config.GetConsulUri()))
+            {
+                var listService = await consulClinet.GetHetachService(config.Name, HealthStatus.Passing, cancellationToken);
+                if (listService == null)
+                    throw new ArgumentNullException(config.Name, "Consul no Health service");
+                var n = DateTime.Now.Second% listService.Length;
+                var model = listService[n];
+
+                IPAddress address = IPAddress.Parse(model.Service.Address);
+
+                return new IPEndPoint(address, model.Service.Port);
+            }
         }
 
         private static IPEndPoint GetIPEndPointFromConfig(ThriftClientConfig config)
@@ -101,16 +120,21 @@ namespace Kaa.ThriftDemo.ThriftManage
             }
             else
             {
-                //ipEndPoint =GetIPEndPointFromConsul(config);
-                ipEndPoint = new IPEndPoint(0, config.Port);
-                hostName = config.ConsulService;
+                //直连
+                //ipEndPoint = await GetIPEndPointFromConsul(config);
+
+                //dns
+                //ipEndPoint = new IPEndPoint(0, config.Port);
+                //hostName = config.ConsulService;
+                //多端口
+                ipEndPoint = await GetIPEndPointFromConsulSupplierMorePort(config, cancellationToken);
             }
 
 
             var transport = GetTransport(Transport.TcpBuffered, ipEndPoint,hostName:hostName);
             var tProtocol = GetProtocol(Protocol.Binary, transport);
 
-            Console.WriteLine($"GetByOpen transport:{transport} protocol:{tProtocol} ip:{ipEndPoint.Address.ToString()} port:{ipEndPoint.Port}");
+            Console.WriteLine($"GetByOpen transport:{transport} protocol:{tProtocol} ip:{ipEndPoint.Address.ToString()} port:{ipEndPoint.Port} hostName:{hostName}");
 
             var client = CreateClient<T>(Protocol.Binary, tProtocol);
             if (isOpen)
@@ -204,8 +228,10 @@ namespace Kaa.ThriftDemo.ThriftManage
                 Console.WriteLine($"Incompetent registration on the Consul");
 
                 //api
-                var consulClinet = new ConsulManage(config.GetConsulUri());
-                await consulClinet.AddKVClientApp(appName, config.Name,DateTime.Now.ToString(), cancellationToken);
+                using (var consulClinet = new ConsulManage(config.GetConsulUri()))
+                {
+                    await consulClinet.AddKVClientApp(appName, config.Name, DateTime.Now.ToString(), cancellationToken);
+                }
             }
         }
     }

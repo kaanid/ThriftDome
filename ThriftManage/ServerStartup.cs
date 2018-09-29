@@ -33,8 +33,10 @@ namespace Kaa.ThriftDemo.ThriftManage
                 log.LogInformation($"Incompetent registration on the Consul");
 
                 //api
-                var consulClinet = new ConsulManage(config.GetConsulUri());
-                await consulClinet.RegisterServiceAsync(config,cancellationToken);
+                using (var consulClinet = new ConsulManage(config.GetConsulUri()))
+                {
+                    await consulClinet.RegisterServiceAsync(config, cancellationToken);
+                }
             }
         }
 

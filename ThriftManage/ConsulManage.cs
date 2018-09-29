@@ -1,6 +1,7 @@
 using Consul;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             var ip = Utils.LocalIPAddress().ToString();
             var ser = new AgentServiceRegistration
             {
-                ID = GetServiceId(confi.Name,ip),
+                ID = GetServiceId(confi.Name,confi.Port,ip),
                 Name = confi.Name,
                 Port = confi.Port,
                 Address = ip,
@@ -60,23 +61,24 @@ namespace Kaa.ThriftDemo.ThriftManage
             return false;
         }
 
-        private string GetServiceId(string serverName, string ip = null)
+        private string GetServiceId(string serverName, int port, string ip = null)
         {
             if (ip == null)
             {
                 ip = Utils.LocalIPAddress().ToString();
             }
-            return $"{serverName}_{ip}";
+            return $"{serverName}_{ip}_{port}";
         }
 
         public async Task<bool> DeregisterServiceAsync(ThriftServerConfig confi, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await DeregisterServiceAsync(confi.Name,cancellationToken);
+            var serverName = GetServiceId(confi.Name, confi.Port);
+            return await DeregisterServiceAsync(serverName, cancellationToken);
         }
 
         public async Task<bool> DeregisterServiceAsync(string serverName,CancellationToken cancellationToken=default(CancellationToken))
         {
-            var result = await _client.Agent.ServiceDeregister(GetServiceId(serverName), cancellationToken);
+            var result = await _client.Agent.ServiceDeregister(serverName, cancellationToken);
             if (result.StatusCode == System.Net.HttpStatusCode.OK)
             {
                 return true;
@@ -84,7 +86,7 @@ namespace Kaa.ThriftDemo.ThriftManage
             return false;
         }
 
-        public async Task<bool> AddKVServiceMethod(string serverName,string methodName, string value, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<bool> AddKVServiceMethod(string serverName,int port, string methodName,string value, CancellationToken cancellationToken = default(CancellationToken))
         {
             return await AddKV($"Service-{serverName}/{Utils.LocalIPAddress().ToString()}/{methodName}",value,cancellationToken);
         }
@@ -106,6 +108,45 @@ namespace Kaa.ThriftDemo.ThriftManage
                 return true;
             }
             return false;
+        }
+
+        public async Task<ServiceEntry[]> GetHetachService(string serviceName, HealthStatus status = null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            //http://127.0.0.1:8500/v1/health/service/web2
+
+            var result = await _client.Health.Service(serviceName, cancellationToken);
+            if (result.StatusCode == System.Net.HttpStatusCode.OK && result.Response != null && result.Response.Length > 0)
+            {
+                if (status == null)
+                    return result.Response;
+
+                var list = result.Response.Where(m => m.Checks.All(m2=>m2.Status == HealthStatus.Passing)).ToArray();
+                if (list.Length > 0)
+                {
+                    return list;
+                }
+            }
+            return null;
+        }
+
+        public async Task<HealthCheck[]> GetHetachServiceCheckList(string serviceName, HealthStatus status=null, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            //http://127.0.0.1:8500/v1/health/state/passing
+            //http://127.0.0.1:8500/v1/health/checks/web2
+
+            var result = await _client.Health.Checks(serviceName, cancellationToken);
+            if (result.StatusCode == System.Net.HttpStatusCode.OK && result.Response != null && result.Response.Length>0)
+            {
+                if (status == null)
+                    return result.Response;
+
+                var list = result.Response.Where(m => m.Status == HealthStatus.Passing).ToArray();
+                if (list.Length > 0)
+                {
+                    return list;
+                }
+            }
+            return null;
         }
 
         public void Dispose()
