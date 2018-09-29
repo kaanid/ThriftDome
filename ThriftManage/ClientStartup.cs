@@ -12,6 +12,7 @@ using Thrift.Transports;
 using Thrift.Transports.Client;
 using Kaa.ThriftDemo.ThriftManage;
 using Consul;
+using Microsoft.Extensions.Logging;
 
 namespace Kaa.ThriftDemo.ThriftManage
 {
@@ -26,7 +27,7 @@ namespace Kaa.ThriftDemo.ThriftManage
     {
         private static ConcurrentDictionary<Type, TClientModel> concurrentDict = new ConcurrentDictionary<Type, TClientModel>();
         private static Timer liveWatch = null;
-        public static async Task<T> GetByCache<T>(ThriftClientConfig config, CancellationToken cancellationToken, string appName, bool isOpen = false) where T : TBaseClient
+        public static async Task<T> GetByCache<T>(ThriftClientConfig config, string appName, bool isOpen = false, ILogger log=null, CancellationToken cancellationToken=default(CancellationToken)) where T : TBaseClient
         {
             var type = typeof(T);
             bool flag = concurrentDict.TryGetValue(type, out TClientModel obj);
@@ -45,7 +46,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                 //}
             }
 
-            //Console.WriteLine($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
+            log?.LogTrace($"GetByCache type:{type} FlushTime:{obj?.FlushTime}");
 
             var newT = await Get<T>(config, cancellationToken, appName, isOpen);
             var newModel = new TClientModel() {
@@ -53,32 +54,39 @@ namespace Kaa.ThriftDemo.ThriftManage
             };
 
             concurrentDict.AddOrUpdate(type, newModel, (typeV, objV) => newModel);
-            CheckLiveTask();
-            //Console.ReadLine();
+            CheckLiveTask(log);
 
             return newT;
         }
 
-        private static void CheckLiveTask()
+        private static void CheckLiveTask(ILogger log)
         {
             if (liveWatch != null)
                 return;
 
             int count = 0;
+            int liveCount = 0;
+            int clientTotal = 0;
+
             liveWatch = new Timer(obj => {
-                Console.WriteLine($"CheckLiveTask time:{DateTime.Now}..... Count:{count++}");
-                
-                if(concurrentDict.Count>0)
+                liveCount = 0;
+                if (concurrentDict.Count>0)
                 {
-                    foreach(var m in concurrentDict.Values)
+                    clientTotal = concurrentDict.Count;
+                    foreach (var m in concurrentDict.Values)
                     {
-                        var t=CheckConnectLiveAsync(m, true);
+                        if(CheckConnectLiveAsync(m, true).Result)
+                        {
+                            liveCount++;
+                        }
                     }
                 }
                 if(count>int.MaxValue-100)
                 {
                     count = 0;
                 }
+                log?.LogInformation($"CheckLiveTask time:{DateTime.Now}.....{liveCount}/{clientTotal} count:{count++}");
+                //Console.WriteLine($"CheckLiveTask time:{DateTime.Now}.....{liveCount}/{clientTotal} count:{count++}");
             }, null, 6000, 10000);
         }
 
@@ -95,6 +103,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                         //检查链接是否断开
                         await model.Client.OutputProtocol.WriteMessageBeginAsync(new Thrift.Protocols.Entities.TMessage("livecheck", Thrift.Protocols.Entities.TMessageType.Oneway, 0));
                         await model.Client.OutputProtocol.WriteMessageEndAsync();
+                        await model.Client.OutputProtocol.Transport.FlushAsync();
                     }
                     catch (Exception ex)
                     {
@@ -120,7 +129,7 @@ namespace Kaa.ThriftDemo.ThriftManage
                 throw new ArgumentNullException(config.ConsulService, "Consul dns is null");
             }
             var len = host.AddressList.Length;
-            IPAddress address = host.AddressList[(len - 1) % (1 + DateTime.Now.Second)];
+            IPAddress address = host.AddressList[DateTime.Now.Second % len];
 
             return new IPEndPoint(address, config.Port);
         }

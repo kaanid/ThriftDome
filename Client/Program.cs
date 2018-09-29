@@ -57,7 +57,7 @@ namespace Client
                 source.CancelAfter(1000);
             }
 
-            Thread.Sleep(500);
+            Console.Read();
 
         }
 
@@ -69,7 +69,7 @@ namespace Client
             var clientConfig = _config.Get<ThriftClientConfig>();
             var appName = _config["AppName"].ToString();
 
-            var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig, cancellationToken, appName,true);
+            var client =await ClientStartup.GetByCache<Calculator.Client>(clientConfig,appName, true, Logger, cancellationToken);
             //var client = await ClientStartup.Get<Calculator.Client>(clientConfig, cancellationToken, appName, true);
             await ExecuteCalculatorClientTest(cancellationToken, client);
 
